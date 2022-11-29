@@ -28,15 +28,15 @@ hostname = manifest-dp.hulustream.com
 ## 外挂字幕
 
 - ### QuanX配置
-单独开启外挂字幕功能的配置如下：
-```
-hostname = discover.hulu.com, manifest-dp.hulustream.com
+  单独开启外挂字幕功能的配置如下：
+  ```
+  hostname = discover.hulu.com, manifest-dp.hulustream.com
 
-# Hulu外挂字幕 discover.hulu.com, manifest-dp.hulustream.com  
-^https:\/\/discover\.hulu\.com\/content\/v\d+\/browse\/upnext\? url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
-^https:\/\/manifest-dp\.hulustream\.com\/webvtt\?asset_id=\d+ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
-^https:\/\/manifest-dp\.hulustream\.com\/subtitles\/dummy\.vtt$ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
-```
+  # Hulu外挂字幕 discover.hulu.com, manifest-dp.hulustream.com  
+  ^https:\/\/discover\.hulu\.com\/content\/v\d+\/browse\/upnext\? url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+  ^https:\/\/manifest-dp\.hulustream\.com\/webvtt\?asset_id=\d+ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+  ^https:\/\/manifest-dp\.hulustream\.com\/subtitles\/dummy\.vtt$ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+  ```
 
 - ### 字幕文件的放置
   **【前置步骤】**  
