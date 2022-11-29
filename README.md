@@ -4,7 +4,18 @@ Hulu iOS 去广告、强制1080p和外挂字幕插件
 
 **本插件与DualSubs字幕插件可能存在冲突，请按需启用。**
 
+## All-in-One配置
+
+在QuanX引用以下重写资源：
+```
+https://raw.githubusercontent.com/liunice/HuluHelper/master/quanx.conf
+```
+这将开启本插件的所有功能，包括去广告、外挂字幕和强制1080p。  
+接下来请参考本文档【外挂字幕】章节来正确放置字幕文件。
+
 ## 去广告
+
+单独开启去广告功能的配置如下：
 
 ```
 hostname = manifest-dp.hulustream.com
@@ -17,6 +28,7 @@ hostname = manifest-dp.hulustream.com
 ## 外挂字幕
 
 - ### QuanX配置
+单独开启外挂字幕功能的配置如下：
 ```
 hostname = discover.hulu.com, manifest-dp.hulustream.com
 
@@ -51,7 +63,8 @@ hostname = discover.hulu.com, manifest-dp.hulustream.com
   部分网友反馈下载的字幕在观看时发现时快时慢，即便添加了时间轴的配置还是对不上。这种情况一般不是插件问题，而是**你下载的字幕和Hulu的视频源不匹配，建议换一个字幕组的再试试。**
 
 ## 强制1080p
-本功能适用于网络不佳且不希望app在缓冲时频繁调整到低码率导致画面模糊的用户。启用后画面会保持最高1080p画质，负作用是首次缓冲和每次快进时可能需要多等待两到三秒，具体取决于你的网络状况。
+本功能适用于网络不佳且不希望app在缓冲时频繁调整到低码率导致画面模糊的用户。启用后画面会保持最高1080p画质，负作用是首次缓冲和每次快进时可能需要多等待两到三秒，具体取决于你的网络状况。  
+单独开启强制1080p功能的配置如下：
 ```
 hostname = manifest-dp.hulustream.com
 
