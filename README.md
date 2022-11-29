@@ -41,7 +41,7 @@ hostname = discover.hulu.com, manifest-dp.hulustream.com
   同样以上面的``The Cleaning Lady``为例。如果你觉得字幕滞后了，想将所有字幕往前调3秒，步骤如下：  
     1. 在``The Cleaning Lady/S02``文件夹下新建文件``subtitle.conf``
     2. 在``subtitle.conf``中添加设置项：``offset=-3000``  
-       **注意这里的offset值的单位为毫秒**  
+       **注意这里的offset值的单位为毫秒**
 
   类似的，如果你只想将S02E01往后调3秒，步骤如下：
     1. 在``The Cleaning Lady/S02``文件夹下新建文件``subtitle.conf``
