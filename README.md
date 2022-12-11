@@ -51,25 +51,22 @@ hostname = manifest-dp.hulustream.com
 
 - ### 字幕文件的放置
   **【前置步骤】**  
-  在 ``iCloud云盘/Quantumult X/Data``目录下新建``Subtitles``目录，如果没有``Data``目录请先新建, 注意字母大小写。  
+  打开iOS的``文件``App，在 ``iCloud云盘/Quantumult X/Data``下新建``Subtitles``文件夹，如果没有``Data``文件夹请先新建, 注意字母大小写。  
   **【文件放置】**  
   我们以Hulu上的剧集 ``The Cleaning Lady``为例。  
-  1. 在Hulu上播放``The Cleaning Lady``第一集，等待顶部出现``正在播放剧集``的通知，注意观察通知框上的剧集名称，应为``The Cleaning Lady``
-  2. 在``iCloud云盘/Quantumult X/Data/Subtitles``目录下新建文件夹``The Cleaning Lady``
-  3. 如果你观看的是第2季，请在``The Cleaning Lady``下新建文件夹``S02``。**注意字母S为大写，且后面的数字固定为两位数。**
-  4. 如果你观看的是第2季第1集，请将srt字幕文件复制到``The Cleaning Lady/S02``目录下，并重命名为``S02E01.srt``，**注意字母S和E均为大写，且后面的数字固定为两位数。**  
+  1. 先开启插件。然后在Hulu上播放``The Cleaning Lady``第一集，等待顶部出现``正在播放剧集``的通知，注意观察通知框上的剧集名称，应为``The Cleaning Lady``
+  2. 浏览到``iCloud云盘/Quantumult X/Data/Subtitles``目录，你会发现插件已经自动建立了一个新文件夹名为``The Cleaning Lady``，再往下还会有一个文件夹名为``S02``。如果没有请自行建立。
+  3. 如果你观看的是第2季第1集，请将srt字幕文件复制到``The Cleaning Lady/S02``目录下，并重命名为``S02E01.srt``，**注意字母S和E均为大写，且后面的数字固定为两位数。**  
   **如果你在Mac上复制文件，请在iPhone上打开``文件``App并确认修改已云同步。**
 
 - ### 字幕时间轴的微调
   同样以上面的``The Cleaning Lady``为例。如果你觉得字幕滞后了，想将所有字幕往前调3秒，步骤如下：  
-  1. 在``The Cleaning Lady/S02``文件夹下新建文件``subtitle.conf``
-  2. 在``subtitle.conf``中添加设置项：``offset=-3000``  
-     **注意这里的offset值的单位为毫秒**
+  1. 如果插件已经激活过一次``正在播放剧集``的通知，那么``The Cleaning Lady/S02``文件夹下应该已经自动创建好了一个新文件名为``subtitle.conf``，这就是默认的字幕配置文件。如果没有请自行建立。
+  2. 用文本编辑工具打开``subtitle.conf``，修改offset设置项为：``offset=-3000``  
+     **注意这里的offset的单位为毫秒**
 
-  类似的，如果你只想将S02E01往后调3秒，步骤如下：
-  1. 在``The Cleaning Lady/S02``文件夹下新建文件``subtitle.conf``
-  2. 在``subtitle.conf``中添加设置项：``S02E01:offset=3000``  
-     **注意offset前的符号为英文冒号，此设置可以与前面的设置项共存**
+  类似的，如果你只想将S02E01往后调3秒，请在``subtitle.conf``中添加设置项：``S02E01:offset=3000``  
+     **注意offset前的符号为英文冒号，此设置可以与上面的设置项共存**
   
   部分网友反馈下载的字幕时快时慢，即使配置了时间轴微调还是对不上。这种情况一般不是插件问题，而是**你下载的字幕和Hulu的视频源不匹配，建议换一个字幕组的再试试。**
 
