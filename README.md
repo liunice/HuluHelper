@@ -1,6 +1,6 @@
 # HuluHelper
 
-Hulu iOS 去广告、强制1080p和外挂字幕插件
+Hulu iOS 去广告、去台标水印、强制1080p和外挂字幕插件
 
 **本插件与DualSubs字幕插件可能存在冲突，请按需启用。**
 
@@ -10,7 +10,7 @@ Hulu iOS 去广告、强制1080p和外挂字幕插件
 ```
 https://raw.githubusercontent.com/liunice/HuluHelper/master/quanx.conf
 ```
-这将开启本插件的所有功能，包括去广告、外挂字幕和强制1080p。  
+这将开启本插件的所有功能，包括去广告、去台标水印、外挂字幕和强制1080p。  
 接下来请参考本文档【外挂字幕】章节来正确放置字幕文件。
 
 ## 去广告
@@ -23,6 +23,17 @@ hostname = manifest-dp.hulustream.com
 # Hulu去广告 manifest-dp.hulustream.com  
 ^https:\/\/manifest-dp\.hulustream\.com\/v\d+\/hls\/\d+\/.*?\.m3u8\?.*?&auth=\w+$ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
 ^https:\/\/manifest-dp\.hulustream\.com\/webvtt\?asset_id=\d+ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+```
+
+## 去播放器台标水印
+
+单独开启去台标水印功能的配置如下：
+
+```
+hostname = manifest-dp.hulustream.com
+
+# Hulu去台标水印 discover.hulu.com 
+^https:\/\/discover\.hulu\.com\/content\/v\d+\/hubs\/series\/ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
 ```
 
 ## 外挂字幕

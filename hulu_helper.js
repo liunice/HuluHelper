@@ -2,7 +2,7 @@
 @author: liunice
 @decription: Hulu iOS 去广告、强制1080p和外挂字幕插件
 @created: 2022-11-26
-@updated: 2022-11-28
+@updated: 2022-12-11
 */
 
 /*
@@ -14,7 +14,7 @@ TG官方群: https://t.me/+W6aJJ-p9Ir1hNmY1
 QuanX用法：
 hostname = discover.hulu.com, manifest-dp.hulustream.com
 
-以下3个功能请按需启用：
+以下功能请按需启用：
 
 # 去广告
 ^https:\/\/manifest-dp\.hulustream\.com\/v\d+\/hls\/\d+\/.*?\.m3u8\?.*?&auth=\w+$ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
@@ -27,12 +27,16 @@ hostname = discover.hulu.com, manifest-dp.hulustream.com
 
 # 强制1080p
 ^https:\/\/manifest-dp\.hulustream\.com\/hls\/\d+\.m3u8\?.*?&auth=\w+$ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+
+# 去播放器台标水印
+^https:\/\/discover\.hulu\.com\/content\/v\d+\/hubs\/series\/  url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
 */
 
 (async () => {
     const $ = Env("hulu_helper.js")
     const SCRIPT_NAME = 'HuluHelper'
     const SUBTITLES_DIR = 'Subtitles'
+    const FN_SUB_SYNCER_DB = 'sub_syncer.db'
 
     if (/manifest\-dp\.hulustream\.com\/v\d+\/hls\/\d+\/.*?\.m3u8\?.*?&auth=\w+$/.test($request.url)) {
         // remove ad
@@ -66,21 +70,37 @@ hostname = discover.hulu.com, manifest-dp.hulustream.com
             $.setdata(epNo, `ep_no@${SCRIPT_NAME}`)
             notify(SCRIPT_NAME, '正在播放剧集', `[${item.series_name}] S${seasonNo}E${epNo}`)
 
+            // create subtitle.conf if it's not there
+            createConfFile()
+            
+            // remove bottom-right branding watermark
+            let body = JSON.stringify(root)
+            body = body.replace(/"brand\.watermark\.bottom\.right"\s*:\s*\{\s*"path"\s*:\s*"[^"]+"/g, '"brand.watermark.bottom.right" : {\n"path" : ""')
+
             // disable cache
             let newHeaders = $response.headers
             delete newHeaders['Cache-Control']
             delete newHeaders['Date']
-            $.done({ status: $.isQuanX() ? 'HTTP/1.1 200 OK' : 200, headers: newHeaders, body: $response.body })
+            
+            $.done({ headers: newHeaders, body: body })
         }
         else {
             // movies
-            $.setdata('', `series_name@${SCRIPT_NAME}`)
-            $.setdata('', `season_no@${SCRIPT_NAME}`)
-            $.setdata('', `ep_no@${SCRIPT_NAME}`)
+            clearPlaying()
             $.done({})
         }
     }
+    else if (/discover\.hulu\.com\/content\/v\d+\/hubs\/series\//.test($request.url)) {
+        // remove bottom-right branding watermark
+        const body = $response.body.replace(/"brand\.watermark\.bottom\.right"\s*:\s*\{\s*"path"\s*:\s*"[^"]+"/g, '"brand.watermark.bottom.right" : {\n"path" : ""')
+        $.done({ body: body })
+    }
     else if (/manifest-dp\.hulustream\.com\/webvtt\?asset_id=\d+/.test($request.url)) {
+        // save manifest for sub syncer
+        if (getSubtitleConfig('subsyncer.enabled') == 'true') {
+            writeSubSyncerDB($request.url)
+        }
+
         // rewrite subtitle
         if (checkSubtitleExists()) {
             // redirect to external srt subtitle
@@ -154,11 +174,67 @@ ${parts.join('\n')}
         $.done({ body: body })
     }
 
+    function clearPlaying() {
+        $.setdata('', `series_name@${SCRIPT_NAME}`)
+        $.setdata('', `season_no@${SCRIPT_NAME}`)
+        $.setdata('', `ep_no@${SCRIPT_NAME}`)
+    }
+
+    function writeSubSyncerDB(manifest_url) {
+        const series_name = $.getdata(`series_name@${SCRIPT_NAME}`)
+        const season = $.getdata(`season_no@${SCRIPT_NAME}`)
+        const episode = $.getdata(`ep_no@${SCRIPT_NAME}`)
+        if (!series_name) return
+
+        const path = `${SUBTITLES_DIR}/${series_name}/${FN_SUB_SYNCER_DB}`
+
+        // read
+        let root
+        try {
+            const body = readICloud(path)
+            if (body) {
+                root = JSON.parse(body)
+            }
+        }
+        catch (e) {
+            $.log(e)
+        }
+        if (!root) {
+            root = { 'manifests': {} }
+        }
+        else if (root['manifests'][`S${season}E${episode}`]) {
+            // 不进行覆盖，防止错误数据写入导致数据混乱
+            return
+        }
+
+        // update
+        root['manifests'][`S${season}E${episode}`] = manifest_url
+
+        // write
+        if (writeICloud(path, JSON.stringify(root))) {
+            notify(SCRIPT_NAME, '播放记录已写入本地数据库', `[${series_name}] S${season}E${episode}`)
+        }
+    }
+
     function notify(title, subtitle, message) {
         const enabled = getScriptConfig('notify') || 'true'
         if (enabled.toLowerCase() == 'true') {
             $.msg(title, subtitle, message)
         }
+    }
+
+    function createConfFile() {
+        const series_name = $.getdata(`series_name@${SCRIPT_NAME}`)
+        const season = $.getdata(`season_no@${SCRIPT_NAME}`)
+        if (!series_name) return
+
+        const path = `${SUBTITLES_DIR}/${series_name}/S${season}/subtitle.conf`
+        if (checkICloudExists(path)) return
+
+        const content = `offset=0
+subsyncer.enabled=false
+        `
+        writeICloud(path, content)
     }
 
     function getSubtitleConfig(key) {
@@ -168,13 +244,13 @@ ${parts.join('\n')}
         const confBody = readICloud(`${SUBTITLES_DIR}/${series_name}/S${season}/subtitle.conf`)
         if (!confBody) return null
 
-        const m = new RegExp(`^S${season}E${episode}:${key}=(.+)`, 'im').exec(confBody)
+        const m = new RegExp(String.raw`^\s*S${season}E${episode}:${key}\s*=\s*(.+)`, 'im').exec(confBody)
         if (m) {
-            return m[1]
+            return m[1].trim()
         }
         else {
-            const m0 = new RegExp(`^${key}=(.+)`, 'im').exec(confBody)
-            return m0 ? m0[1] : null
+            const m0 = new RegExp(String.raw`^\s*${key}\s*=\s*(.+)`, 'im').exec(confBody)
+            return m0 && m0[1].trim()
         }
     }
 
@@ -182,11 +258,8 @@ ${parts.join('\n')}
         const confBody = readICloud(`${SUBTITLES_DIR}/helper.conf`)
         if (!confBody) return null
 
-        const m = new RegExp(`^${key}=(.+)`, 'im').exec(confBody)
-        if (m) {
-            return m[1]
-        }
-        return null
+        const m = new RegExp(String.raw`^\s*${key}\s*=\s*(.+)`, 'im').exec(confBody)
+        return m && m[1].trim()
     }
 
     function numberWithCommas(x) {
@@ -222,8 +295,11 @@ ${parts.join('\n')}
         const season = $.getdata(`season_no@${SCRIPT_NAME}`)
         const episode = $.getdata(`ep_no@${SCRIPT_NAME}`)
         const path = `${SUBTITLES_DIR}/${series_name}/S${season}/S${season}E${episode}.srt`
-        $.log(path)
-        return checkICloudExists(path)
+        const found = checkICloudExists(path)
+        if (!found) {
+            $.log(`subtitle not exist: ${path}`)
+        }
+        return found
     }
 
     function getSubtitle() {
@@ -244,6 +320,15 @@ ${parts.join('\n')}
             const content = new TextDecoder().decode(data)
             return content
         }
+    }
+
+    function writeICloud(path, content) {
+        const buffer = new TextEncoder().encode(content)
+        if (!$iCloud.writeFile(buffer, path)) {
+            console.log(`iCloud file write failed, path: ${path}`)
+            return false
+        }
+        return true
     }
 
     function checkICloudExists(path) {
