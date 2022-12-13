@@ -2,7 +2,7 @@
 @author: liunice
 @decription: Hulu iOS 去广告、强制1080p和外挂字幕插件
 @created: 2022-11-26
-@updated: 2022-12-11
+@updated: 2022-12-12
 */
 
 /*
@@ -30,6 +30,7 @@ hostname = discover.hulu.com, manifest-dp.hulustream.com
 
 # 去播放器台标水印
 ^https:\/\/discover\.hulu\.com\/content\/v\d+\/hubs\/series\/  url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+^https:\/\/discover\.hulu\.com\/content\/v\d+\/browse\/upnext\? url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
 */
 
 (async () => {
@@ -37,6 +38,7 @@ hostname = discover.hulu.com, manifest-dp.hulustream.com
     const SCRIPT_NAME = 'HuluHelper'
     const SUBTITLES_DIR = 'Subtitles'
     const FN_SUB_SYNCER_DB = 'sub_syncer.db'
+    const PLATFORM_NAME = 'hulu'
 
     if (/manifest\-dp\.hulustream\.com\/v\d+\/hls\/\d+\/.*?\.m3u8\?.*?&auth=\w+$/.test($request.url)) {
         // remove ad
@@ -71,7 +73,9 @@ hostname = discover.hulu.com, manifest-dp.hulustream.com
             notify(SCRIPT_NAME, '正在播放剧集', `[${item.series_name}] S${seasonNo}E${epNo}`)
 
             // create subtitle.conf if it's not there
-            createConfFile()
+            if (getScriptConfig('auto.create') !== 'false') {
+                createConfFile()
+            }
             
             // remove bottom-right branding watermark
             let body = JSON.stringify(root)
@@ -147,14 +151,13 @@ ${parts.join('\n')}
         $.log(vttBody)
 
         // return response
-        var newHeaders = $request.headers
-        newHeaders['Content-Type'] = 'application/vnd.apple.mpegurl'
-        if ($.isQuanX()) {
-            $.done({ body: vttBody, headers: newHeaders, status: 'HTTP/1.1 200 OK' })
-        }
-        else {
-            $.done({ body: vttBody, headers: newHeaders, status: 200 })
-        }
+        const headers = $response.headers
+        headers['Content-Type'] = 'application/vnd.apple.mpegurl'
+        $.done({
+            body: vttBody,
+            headers: headers,
+            status: $.isQuanX() ? 'HTTP/1.1 200 OK' : 200
+        })
     }
     else if (/manifest-dp\.hulustream\.com\/hls\/\d+\.m3u8\?.*?&auth=\w+$/.test($request.url)) {
         let body = $response.body
@@ -200,7 +203,14 @@ ${parts.join('\n')}
             $.log(e)
         }
         if (!root) {
-            root = { 'manifests': {} }
+            root = {
+                'manifests': {},
+                'platform': PLATFORM_NAME
+            }
+        }
+        else if (root['platform'] && root['platform'] != PLATFORM_NAME) {
+            // 不允许不同平台的数据混在一起
+            return
         }
         else if (root['manifests'][`S${season}E${episode}`]) {
             // 不进行覆盖，防止错误数据写入导致数据混乱
