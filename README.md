@@ -4,6 +4,8 @@ Hulu iOS 去广告、去台标水印、强制1080p和外挂字幕插件
 
 **本插件与DualSubs字幕插件可能存在冲突，请按需启用。**
 
+推荐和我开发的[AutoSubSyncer](https://github.com/liunice/AutoSubSyncer)一起使用。AutoSubSyncer运行在电脑端，可从任意一个ass双语字幕轻松生成一个自动调轴的srt字幕。
+
 ## All-in-One配置
 
 在QuanX引用以下重写资源：
@@ -18,11 +20,11 @@ https://raw.githubusercontent.com/liunice/HuluHelper/master/quanx.conf
 单独开启去广告功能的配置如下：
 
 ```
-hostname = manifest-dp.hulustream.com
+hostname = vodmanifest.hulustream.com
 
-# Hulu去广告 manifest-dp.hulustream.com  
-^https:\/\/manifest-dp\.hulustream\.com\/v\d+\/hls\/\d+\/.*?\.m3u8\?.*?&auth=\w+$ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
-^https:\/\/manifest-dp\.hulustream\.com\/webvtt\?asset_id=\d+ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+# Hulu去广告 vodmanifest.hulustream.com  
+^https:\/\/vodmanifest\.hulustream\.com\/hulu\/v\d+\/hls\/(video|audio)\/\d+\/ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+^https:\/\/vodmanifest\.hulustream\.com\/hulu\/v\d+\/hls\/vtt\/\d+\/playlist\.m3u8 url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
 ```
 
 ## 去播放器台标水印
@@ -30,10 +32,10 @@ hostname = manifest-dp.hulustream.com
 单独开启去台标水印功能的配置如下：
 
 ```
-hostname = manifest-dp.hulustream.com
+hostname = discover.hulu.com
 
 # Hulu去台标水印 discover.hulu.com 
-^https:\/\/discover\.hulu\.com\/content\/v\d+\/hubs\/series\/ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+^https:\/\/discover\.hulu\.com\/content\/v\d+\/hubs\/series\/  url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
 ^https:\/\/discover\.hulu\.com\/content\/v\d+\/browse\/upnext\? url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
 ```
 
@@ -42,12 +44,12 @@ hostname = manifest-dp.hulustream.com
 - ### QuanX配置
   单独开启外挂字幕功能的配置如下：
   ```
-  hostname = discover.hulu.com, manifest-dp.hulustream.com
+  hostname = discover.hulu.com, vodmanifest.hulustream.com
 
-  # Hulu外挂字幕 discover.hulu.com, manifest-dp.hulustream.com  
+  # Hulu外挂字幕 discover.hulu.com, vodmanifest.hulustream.com  
   ^https:\/\/discover\.hulu\.com\/content\/v\d+\/browse\/upnext\? url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
-  ^https:\/\/manifest-dp\.hulustream\.com\/webvtt\?asset_id=\d+ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
-  ^https:\/\/manifest-dp\.hulustream\.com\/subtitles\/dummy\.vtt$ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+  ^https:\/\/vodmanifest\.hulustream\.com\/hulu\/v\d+\/hls\/vtt\/\d+\/playlist\.m3u8 url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+  ^https:\/\/vodmanifest\.hulustream\.com\/subtitles\/dummy\.vtt$ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
   ```
 
 - ### 字幕文件的放置
@@ -76,10 +78,10 @@ hostname = manifest-dp.hulustream.com
 本功能适用于网络不佳且不希望app在缓冲时频繁调整到低码率导致画面模糊的用户。启用后画面会保持最高1080p画质，负作用是首次缓冲和每次快进时可能需要多等待两到三秒，具体取决于你的网络状况。  
 单独开启强制1080p功能的配置如下：
 ```
-hostname = manifest-dp.hulustream.com
+hostname = vodmanifest.hulustream.com
 
-# 强制1080p
-^https:\/\/manifest-dp\.hulustream\.com\/hls\/\d+\.m3u8\?.*?&auth=\w+$ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+# 强制1080p vodmanifest.hulustream.com
+^https:\/\/vodmanifest\.hulustream\.com\/hulu\/v\d+\/hls\/multivariant\/\d+\/playlist\.m3u8 url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
 ```
 
 ## 插件通知的禁用
@@ -105,7 +107,7 @@ hostname = manifest-dp.hulustream.com
 
 ## 注意
 
-    - 本插件暂只支持QuanX，后续会支持Surge
+    - 本插件暂只支持QuanX
     - 本插件暂只支持电视剧，不支持电影
     - 仅支持srt格式的字幕
     - 字幕文件建议为utf-8编码，否则可能无法解析

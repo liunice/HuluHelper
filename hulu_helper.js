@@ -2,7 +2,7 @@
 @author: liunice
 @decription: Hulu iOS 去广告、强制1080p和外挂字幕插件
 @created: 2022-11-26
-@updated: 2022-12-12
+@updated: 2023-09-06
 */
 
 /*
@@ -12,21 +12,21 @@
 TG官方群: https://t.me/+W6aJJ-p9Ir1hNmY1
 
 QuanX用法：
-hostname = discover.hulu.com, manifest-dp.hulustream.com
+hostname = discover.hulu.com, vodmanifest.hulustream.com
 
 以下功能请按需启用：
 
 # 去广告
-^https:\/\/manifest-dp\.hulustream\.com\/v\d+\/hls\/\d+\/.*?\.m3u8\?.*?&auth=\w+$ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
-^https:\/\/manifest-dp\.hulustream\.com\/webvtt\?asset_id=\d+ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+^https:\/\/vodmanifest\.hulustream\.com\/hulu\/v\d+\/hls\/(video|audio)\/\d+\/ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+^https:\/\/vodmanifest\.hulustream\.com\/hulu\/v\d+\/hls\/vtt\/\d+\/playlist\.m3u8 url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
 
 # 外挂srt字幕 (外挂字幕方法请参见github主页)
 ^https:\/\/discover\.hulu\.com\/content\/v\d+\/browse\/upnext\? url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
-^https:\/\/manifest-dp\.hulustream\.com\/webvtt\?asset_id=\d+ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
-^https:\/\/manifest-dp\.hulustream\.com\/subtitles\/dummy\.vtt$ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+^https:\/\/vodmanifest\.hulustream\.com\/hulu\/v\d+\/hls\/vtt\/\d+\/playlist\.m3u8 url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+^https:\/\/vodmanifest\.hulustream\.com\/subtitles\/dummy\.vtt$ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
 
 # 强制1080p
-^https:\/\/manifest-dp\.hulustream\.com\/hls\/\d+\.m3u8\?.*?&auth=\w+$ url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
+^https:\/\/vodmanifest\.hulustream\.com\/hulu\/v\d+\/hls\/multivariant\/\d+\/playlist\.m3u8 url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
 
 # 去播放器台标水印
 ^https:\/\/discover\.hulu\.com\/content\/v\d+\/hubs\/series\/  url script-response-body https://raw.githubusercontent.com/liunice/HuluHelper/master/hulu_helper.js
@@ -40,26 +40,22 @@ hostname = discover.hulu.com, manifest-dp.hulustream.com
     const FN_SUB_SYNCER_DB = 'sub_syncer.db'
     const PLATFORM_NAME = 'hulu'
 
-    if (/manifest\-dp\.hulustream\.com\/v\d+\/hls\/\d+\/.*?\.m3u8\?.*?&auth=\w+$/.test($request.url)) {
+    if (/\/hulu\/v\d+\/hls\/(video|audio)\/\d+\//.test($request.url)) {
         // remove ad
         let body = $response.body
 
-        // strip extra clips from the beginning
-        body = body.replace(/^([\s\S]*?#EXT\-X\-TARGETDURATION:\d+)[\s\S]*?(#EXT\-X\-KEY:METHOD=[\s\S]*?)$/, '$1\r\n$2')
-
         const is_video = !body.includes('_audio.mp4?')
 
-        // remove ad (if any)
         if (is_video) {
-            body = body.replace(/#EXT-X-DISCONTINUITY\s+#EXT-X-DATERANGE:ID="\d+".*?,X-COM-HULU-CONTENT-MANIFEST-PERIOD-TYPE-\d+="ad"[\s\S]*?\s+#EXT-X-DISCONTINUITY\s+#EXT-X-KEY:METHOD=SAMPLE-AES[\s\S]*?\s+(#EXTINF:\d+)/g, '\r\n$1')
+            body = body.replace(/#EXT-X-DATERANGE:ID="\d+",.*?X-COM-HULU-CONTENT-MANIFEST-PERIOD-TYPE-\d+="(?:bumper|ad)"[\s\S]*?(#EXT-X-DATERANGE:ID="\d+",.*?X-COM-HULU-CONTENT-MANIFEST-PERIOD-TYPE-\d+="content".*?\s+)#EXT-X-DISCONTINUITY\s+/g, '\r\n$1')
         }
         else {
-            body = body.replace(/#EXT-X-DISCONTINUITY\s+#EXT-X-KEY:METHOD=NONE[\s\S]*?\s+#EXT-X-DISCONTINUITY\s+#EXT-X-KEY:METHOD=SAMPLE-AES[\s\S]*?\s+(#EXTINF:\d+)/g, '\r\n$1')
+            body = body.replace(/(?:#EXT-X-DISCONTINUITY\s+)?#EXT-X-BYTERANGE:\d+@\d+\s+(?:#EXT-X-KEY:METHOD=NONE\s+)?#EXT-X-MAP:URI="https:\/\/ads-[\s\S]*?#EXT-X-DISCONTINUITY\s+(#EXT-X-BYTERANGE:\d+@\d+\s+#EXT-X-KEY:METHOD=SAMPLE-AES,)/g, '\r\n$1')
         }
 
         $.done({ body: body })
     }
-    else if (/discover\.hulu\.com\/content\/v\d+\/browse\/upnext\?/.test($request.url)) {
+    else if (/\/content\/v\d+\/browse\/upnext\?/.test($request.url)) {
         // checking playing video
         const root = JSON.parse($response.body)
         const item = root.items[0]
@@ -94,12 +90,12 @@ hostname = discover.hulu.com, manifest-dp.hulustream.com
             $.done({})
         }
     }
-    else if (/discover\.hulu\.com\/content\/v\d+\/hubs\/series\//.test($request.url)) {
+    else if (/\/content\/v\d+\/hubs\/series\//.test($request.url)) {
         // remove bottom-right branding watermark
         const body = $response.body.replace(/"brand\.watermark\.bottom\.right"\s*:\s*\{\s*"path"\s*:\s*"[^"]+"/g, '"brand.watermark.bottom.right" : {\n"path" : ""')
         $.done({ body: body })
     }
-    else if (/manifest-dp\.hulustream\.com\/webvtt\?asset_id=\d+/.test($request.url)) {
+    else if (/\/hulu\/v\d+\/hls\/vtt\/\d+\/playlist\.m3u8/.test($request.url)) {
         // save manifest for sub syncer
         if (getSubtitleConfig('subsyncer.enabled') == 'true') {
             writeSubSyncerDB($request.url)
@@ -114,14 +110,14 @@ hostname = discover.hulu.com, manifest-dp.hulustream.com
 #EXT-X-MEDIA-SEQUENCE:0
 #EXT-X-TARGETDURATION:36000
 #EXTINF:36000.000,
-https://manifest-dp.hulustream.com/subtitles/dummy.vtt
+https://vodmanifest.hulustream.com/subtitles/dummy.vtt
 #EXT-X-ENDLIST
 `
             $.done({ body: body })
         }
         else {
             // use original cc subtitle (need to remove ad subtitle)
-            const parts = [...$response.body.matchAll(/#EXTINF:\d+\s+http:\/\/assets\.huluim\.com\/captions_webvtt\/(?!blank).*?\.vtt/g)].map(s => s[0])
+            const parts = [...$response.body.matchAll(/#EXTINF:\d+.*?\s+http:\/\/assets\.huluim\.com\/captions_webvtt\/(?!blank).*?\.vtt/g)].map(s => s[0])
             const body = `#EXTM3U
 #EXT-X-TARGETDURATION:30
 #EXT-X-VERSION:3
@@ -134,7 +130,7 @@ ${parts.join('\n')}
             $.done({ body: body })
         }
     }
-    else if (/manifest-dp\.hulustream\.com\/subtitles\/dummy\.vtt$/.test($request.url)) {
+    else if (/\/subtitles\/dummy\.vtt$/.test($request.url)) {
         const offset = parseInt(getSubtitleConfig('offset') || '0')
         $.log(`offset = ${offset}`)
 
@@ -159,19 +155,19 @@ ${parts.join('\n')}
             status: $.isQuanX() ? 'HTTP/1.1 200 OK' : 200
         })
     }
-    else if (/manifest-dp\.hulustream\.com\/hls\/\d+\.m3u8\?.*?&auth=\w+$/.test($request.url)) {
+    else if (/\/hulu\/v\d+\/hls\/multivariant\/\d+\/playlist\.m3u8/.test($request.url)) {
         let body = $response.body
         // force 1080p
-        // #EXT-X-STREAM-INF:BANDWIDTH=7428365,RESOLUTION=1920x1080,AVERAGE-BANDWIDTH=3185815,CODECS="avc1.640028,mp4a.40.5",FRAME-RATE=23.976,AUDIO="da-audio-AAC",SUBTITLES="subs",VIDEO-RANGE="SDR"
+        // #EXT-X-STREAM-INF:BANDWIDTH=5017675,AVERAGE-BANDWIDTH=2679008,CODECS="hev1.2.4.L120.90,ec-3",RESOLUTION=1920x1080,FRAME-RATE=25.000,VIDEO-RANGE=SDR
         const range = '(SDR)'
         const vcodecs = '(?:avc|hvc|hev)'
-        const bitrates = [...body.matchAll(RegExp(String.raw`#EXT-X-STREAM-INF:BANDWIDTH=(\d+),RESOLUTION=([\dx]+),AVERAGE-BANDWIDTH=\d+,CODECS="${vcodecs}[^"]+".*?,VIDEO-RANGE="${range}"\s+https:\/\/.+`, 'g'))].map(s => parseInt(s[1]))
+        const bitrates = [...body.matchAll(RegExp(String.raw`#EXT-X-STREAM-INF:BANDWIDTH=(\d+),AVERAGE-BANDWIDTH=\d+,CODECS="${vcodecs}[^"]+",RESOLUTION=([\dx]+).*?,VIDEO-RANGE=${range}.*?\s+https:\/\/.+`, 'g'))].map(s => parseInt(s[1]))
         const maxrate = Math.max(...bitrates)
-        const m = RegExp(String.raw`#EXT-X-STREAM-INF:BANDWIDTH=(${maxrate}),RESOLUTION=([\dx]+),AVERAGE-BANDWIDTH=\d+,CODECS="(${vcodecs}[^"]+)".*?,VIDEO-RANGE="${range}"\s+(https:\/\/.+)`, 'g').exec(body)
+        const m = RegExp(String.raw`#EXT-X-STREAM-INF:BANDWIDTH=(${maxrate}),AVERAGE-BANDWIDTH=\d+,CODECS="(${vcodecs}[^"]+)",RESOLUTION=([\dx]+).*?,VIDEO-RANGE=${range}.*?\s+(https:\/\/.+)`, 'g').exec(body)
         if (m) {
-            body = body.replace(RegExp(String.raw`#EXT-X-STREAM-INF:(?!BANDWIDTH=(${m[1]}),RESOLUTION=(${m[2]}),AVERAGE-BANDWIDTH=\d+,CODECS="(${m[3]})".*?,VIDEO-RANGE="(${m[4]})").+\s+.+`, 'g'), '')
+            body = body.replace(RegExp(String.raw`#EXT-X-STREAM-INF:(?!BANDWIDTH=(${m[1]}),AVERAGE-BANDWIDTH=\d+,CODECS="(${m[2]})",RESOLUTION=(${m[3]}).*?,VIDEO-RANGE=(${m[4]})).+\s+.+`, 'g'), '')
             $.log(body)
-            notify(SCRIPT_NAME, `已强制${m[2]}`, `BANDWIDTH=${numberWithCommas(m[1])},CODECS="${m[3]}",VIDEO-RANGE=${m[4]}`)
+            notify(SCRIPT_NAME, `已强制${m[3]}`, `BANDWIDTH=${numberWithCommas(m[1])},CODECS="${m[2]}",VIDEO-RANGE=${m[4]}`)
         }
 
         $.done({ body: body })
@@ -323,7 +319,7 @@ subsyncer.enabled=false
     function readICloud(path) {
         const data = $iCloud.readFile(path)
         if (data === undefined) {
-            $.log(`iCloud file read failed, path: ${path}`)
+            // $.log(`iCloud file read failed, path: ${path}`)
             return null
         } 
         else {
